@@ -1,0 +1,39 @@
+<html>
+    
+    <body>
+        
+        <h1>Catalog App</h1>
+        <a href="#">login</a>
+
+        <h1>Edit Item</h1>
+    
+        <form action="#" method = 'POST'>
+            
+                    <p>Title</p>
+            
+                    <input type='text' size='30' name='name' placeholder="{{item.name}}">
+
+                    <p>Description</p>
+                    
+                    <input type='text' size='80' name='name' placeholder="{{item.name}}">
+
+                    <p>Category</p>
+                    
+                    <select>
+                        {% for i in category %}
+
+                        <option value="#">{{i.name}}</option>
+
+                        {% endfor %}
+                    </select>
+
+                    <br><br>
+            
+                    <input type='submit' value='Edit'>
+            
+                </form>
+            
+    
+    </body>
+    
+    </html>

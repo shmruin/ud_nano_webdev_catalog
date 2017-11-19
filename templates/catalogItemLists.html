@@ -1,0 +1,34 @@
+<html>
+    
+    <body>
+        
+        <h1>Catalog App</h1>
+        <a href="#">login</a>
+
+        <h1>Categories</h1>
+    
+        {% for i in categories %}
+
+            <a href="#">{{i.name}}</a>
+    
+            <br>
+    
+        {% endfor %}
+
+        <br><br>
+
+        <h1>{{selectedCategory}} Items ({{associatedItems|length}} items)</h1>
+
+        <!-- To show the selected category's items added or edited -->
+        
+        {% for i in associatedItems %}
+
+            <a href="#">{{i.name}}</a>
+        
+            <br>
+
+        {% endfor %}
+    
+    </body>
+    
+    </html>
