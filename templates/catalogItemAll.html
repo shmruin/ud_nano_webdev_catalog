@@ -71,13 +71,15 @@
 
         <br><br>
 
+        <a href="{{url_for('catalogItemAdd')}}">Add Item</a>
+
         <h1>Latest Items</h1>
 
         <!-- To show the latest items added or edited -->
         
-        {% for i in latestItems %}
+        {% for i, j in latest %}
 
-            <a href="#" style="text-decoration: none;">{{i.name}} <span style="color: grey;"><i>{{'(test)'}}</i></span></a>
+            <a href="{{url_for('catalogItemDesc', category_name=i.name, item_name=j.name)}}" style="text-decoration: none;">{{j.name}} <span style="color: grey;"><i>{{'(' + i.name + ')'}}</i></span></a>
         
             <br>
 

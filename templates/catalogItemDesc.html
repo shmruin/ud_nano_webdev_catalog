@@ -8,6 +8,12 @@
         <h1>{{item.name}}</h1>
         
         <p>{{item.description}}</p>
+
+        <form action="{{url_for('catalogItemEdit', item_name=item.name)}}" method="GET">
+            <input type="submit" value="Edit">
+        </form>|<form action="{{url_for('catalogItemDelete', item_name=item.name)}}" method="GET">
+            <input type="submit" value="Delete">
+        </form>
     
     </body>
     

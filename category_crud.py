@@ -120,7 +120,10 @@ def catalogItemAll():
     #TODO: Read All Category Items - plus after login processs
     categories = session.query(Category).all()
     latestItems = session.query(CategoryItem).order_by(desc(CategoryItem.time_updated))
-    return render_template('catalogItemAll.html', categories=categories, latestItems=latestItems)
+    latestCategories = []
+    for i in latestItems:
+        latestCategories.append(session.query(Category).filter_by(id=i.category_id).first())
+    return render_template('catalogItemAll.html', categories=categories, latest=zip(latestCategories, latestItems))
 
 
 @app.route('/catalog/<string:category_name>/items')
@@ -138,19 +141,51 @@ def catalogItemDesc(category_name, item_name):
     return render_template('catalogItemDesc.html', item=item)
 
 
+@app.route('/catalog/add', methods=['GET', 'POST'])
+def catalogItemAdd():
+    #TODO: Edit a category item - Only after login
+    if request.method == 'POST':
+        category = session.query(Category).filter_by(name=request.form.get('category_selected')).first()
+        newItem = CategoryItem(name=request.form['name'], description=request.form['description'], category_id=category.id)
+        session.add(newItem)
+        session.commit()
+        return redirect(url_for('catalogItemAll'))
+    else:
+        categories = session.query(Category).all()
+        return render_template('catalogItemAdd.html', categories=categories)
+
+
 @app.route('/catalog/<string:item_name>/edit', methods=['GET', 'POST'])
 def catalogItemEdit(item_name):
     #TODO: Edit a category item - Only after login
-    category = session.query(Category).all()
-    item = session.query(CategoryItem).filter_by(name=item_name).first()
-    return render_template('catalogItemEdit.html', category=category, item=item)
+    editItem = session.query(CategoryItem).filter_by(name=item_name).first()
+    print(item_name)
+    print(editItem)
+    if request.method == 'POST':
+        editItem.name = request.form['name']
+        editItem.description = request.form['description']
+        editItemCategory = session.query(Category).filter_by(name=request.form.get('category_selected')).first()
+        editItem.category_id = editItemCategory.id
+        session.add(editItem)
+        session.commit()
+        return redirect(url_for('catalogItemAll'))
+    else: 
+        category = session.query(Category).all()
+        item = session.query(CategoryItem).filter_by(name=item_name).first()
+        return render_template('catalogItemEdit.html', category=category, item=item)
 
 
 @app.route('/catalog/<string:item_name>/delete',  methods=['GET', 'POST'])
 def catalogItemDelete(item_name):
     #TODO: Delete a category item - Only after login
-    item = session.query(CategoryItem).filter_by(name=item_name).first()
-    return render_template('catalogItemDelete.html', item=item)
+    deleteItem = session.query(CategoryItem).filter_by(name=item_name).first()
+    if request.method == 'POST':
+        session.delete(deleteItem)
+        session.commit()
+        return redirect(url_for('catalogItemAll'))
+    else:
+        item = session.query(CategoryItem).filter_by(name=item_name).first()
+        return render_template('catalogItemDelete.html', item=item)
 
 
 @app.route('/catalog.json')
