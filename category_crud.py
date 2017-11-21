@@ -10,6 +10,7 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 import httplib2
 import json
+
 from flask import make_response
 import requests
 
@@ -25,12 +26,12 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 
-@app.route('/login')
-def showLogin():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                for x in xrange(32))
-    login_session['state'] = state
-    return "The current session state is %s" % login_session['state']
+# @app.route('/login')
+# def showLogin():
+#     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+#                 for x in xrange(32))
+#     login_session['state'] = state
+#     return "The current session state is %s" % login_session['state']
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -57,7 +58,7 @@ def gconnect():
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
            % access_token)
     h = httplib2.Http()
-    result = json.loads(h.request(url, 'GET')[1])
+    result = json.loads(h.request(url, 'GET')[1].decode('utf-8'))
     # If there was an error in the access token info, abort.
     if result.get('error') is not None:
         response = make_response(json.dumps(result.get('error')), 500)
@@ -103,16 +104,19 @@ def gconnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
+    # output = ''
+    # output += '<h1>Welcome, '
+    # output += login_session['username']
+    # output += '!</h1>'
+    # output += '<img src="'
+    # output += login_session['picture']
+    # output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    # flash("you are now logged in as %s" % login_session['username'])
+    # print("done!")
+    # return output
     output = ''
-    output += '<h1>Welcome, '
-    output += login_session['username']
-    output += '!</h1>'
-    output += '<img src="'
-    output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as %s" % login_session['username'])
-    print("done!")
     return output
+    
 
 
 @app.route('/')
@@ -123,22 +127,41 @@ def catalogItemAll():
     latestCategories = []
     for i in latestItems:
         latestCategories.append(session.query(Category).filter_by(id=i.category_id).first())
-    return render_template('catalogItemAll.html', categories=categories, latest=zip(latestCategories, latestItems))
+    if 'username' not in login_session:
+        state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                for x in range(32))
+        login_session['state'] = state
+        return render_template('publicCatalogItemAll.html', categories=categories, latest=zip(latestCategories, latestItems), STATE=state)
+    else:
+        return render_template('catalogItemAll.html', categories=categories, latest=zip(latestCategories, latestItems))
 
 
 @app.route('/catalog/<string:category_name>/items')
 def catalogItemLists(category_name):
     #TODO: Read category item lists
     categories = session.query(Category).all()
-    associatedItems = session.query(CategoryItem).filter_by(category_name=category_name).all()
-    return render_template('catalogItemLists.html', categories=categories, selectedCategory=category_name, associatedItems=associatedItems)
+    associatedCategory = session.query(Category).filter_by(name=category_name).first()
+    associatedItems = session.query(CategoryItem).filter_by(category_id=associatedCategory.id).all()
+    if 'username' not in login_session:
+        state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                for x in range(32))
+        login_session['state'] = state
+        return render_template('publicCatalogItemLists.html', categories=categories, associatedCategory=associatedCategory, associatedItems=associatedItems, STATE=state)
+    else:    
+        return render_template('catalogItemLists.html', categories=categories, associatedCategory=associatedCategory, associatedItems=associatedItems)
 
 
 @app.route('/catalog/<string:category_name>/<string:item_name>', methods=['GET', 'POST'])
 def catalogItemDesc(category_name, item_name):
     #TODO: Read a category item description - plus after login process
     item = session.query(CategoryItem).filter_by(name=item_name).one()
-    return render_template('catalogItemDesc.html', item=item)
+    if 'username' not in login_session:
+        state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                for x in range(32))
+        login_session['state'] = state
+        return render_template('publicCatalogItemDesc.html', item=item, STATE=state)       
+    else:
+        return render_template('catalogItemDesc.html', item=item)
 
 
 @app.route('/catalog/add', methods=['GET', 'POST'])
@@ -206,5 +229,6 @@ def catalogJSON():
     
 
 if __name__ == '__main__':
+    app.secret_key = 'super_secret_key'
     app.debug = True
     app.run(host='0.0.0.0', port=8000)

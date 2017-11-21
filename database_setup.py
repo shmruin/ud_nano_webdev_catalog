@@ -9,7 +9,7 @@ from sqlalchemy.sql import func
  
 Base = declarative_base()
 
- 
+
 class Category(Base):
     __tablename__ = 'category'
    
@@ -34,7 +34,7 @@ class CategoryItem(Base):
     time_created = Column(DateTime(timezone=True), server_default=func.now())
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
     category_id = Column(Integer,ForeignKey('category.id'))
-    category = relationship(Category) 
+    category = relationship(Category)
 
     @property
     def serialize(self):

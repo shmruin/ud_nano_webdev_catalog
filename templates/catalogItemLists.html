@@ -1,15 +1,14 @@
 <html>
     
     <body>
-        
+
         <h1>Catalog App</h1>
-        <a href="#">login</a>
 
         <h1>Categories</h1>
     
         {% for i in categories %}
 
-            <a href="#">{{i.name}}</a>
+            <a href="{{url_for('catalogItemLists', category_name=i.name)}}">{{i.name}}</a>
     
             <br>
     
@@ -17,13 +16,13 @@
 
         <br><br>
 
-        <h1>{{selectedCategory}} Items ({{associatedItems|length}} items)</h1>
+        <h1>{{associatedCategory.name}} Items ({{associatedItems|length}} items)</h1>
 
         <!-- To show the selected category's items added or edited -->
         
         {% for i in associatedItems %}
 
-            <a href="#">{{i.name}}</a>
+            <a href="{{url_for('catalogItemDesc', category_name=associatedCategory.name, item_name=i.name)}}">{{i.name}}</a>
         
             <br>
 

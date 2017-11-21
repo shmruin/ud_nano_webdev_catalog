@@ -1,20 +1,19 @@
 <html>
-        
-        <body>
-            
-            <h1>Catalog App</h1>
-            <a href="#">login</a>
     
-            <h1>Delete Item</h1>
-            
-            <p>Are you sure you want to delete {{item.name}}?</p>
+    <body>
 
-            <form action="{{url_for('catalogItemDelete', item_name=item.name)}}" method = 'POST'>
+        <h1>Catalog App</h1>
 
-                <input type="submit" value="Delete">
-
-            </form>
+        <h1>Delete Item</h1>
         
-        </body>
-        
-        </html>
+        <p>Are you sure you want to delete {{item.name}}?</p>
+
+        <form action="{{url_for('catalogItemDelete', item_name=item.name)}}" method = 'POST'>
+
+            <input type="submit" value="Delete">
+
+        </form>
+    
+    </body>
+    
+    </html>
