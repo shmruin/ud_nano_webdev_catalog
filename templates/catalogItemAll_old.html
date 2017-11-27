@@ -1,0 +1,35 @@
+﻿<html>
+    
+    <body>
+        
+        <h1>Catalog App</h1>
+
+        <h1>Categories</h1>
+    
+        {% for i in categories %}
+
+            <a href="{{url_for('catalogItemLists', category_name=i.name)}}">{{i.name}}</a>
+    
+            <br>
+    
+        {% endfor %}
+
+        <br><br>
+
+        <a href="{{url_for('catalogItemAdd')}}">Add Item</a>
+
+        <h1>Latest Items</h1>
+
+        <!-- To show the latest items added or edited -->
+        
+        {% for i, j in latest %}
+
+            <a href="{{url_for('catalogItemDesc', category_name=i.name, item_name=j.name)}}" style="text-decoration: none;">{{j.name}} <span style="color: grey;"><i>{{'(' + i.name + ')'}}</i></span></a>
+        
+            <br>
+
+        {% endfor %}
+    
+    </body>
+    
+    </html>
