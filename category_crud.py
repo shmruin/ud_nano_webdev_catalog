@@ -4,7 +4,8 @@ from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Category, CategoryItem
 
 from flask import session as login_session
-import random, string
+import random
+import string
 
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
@@ -25,13 +26,8 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
-# @app.route('/login')
-# def showLogin():
-#     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-#                 for x in xrange(32))
-#     login_session['state'] = state
-#     return "The current session state is %s" % login_session['state']
 
+# proper google sign-in method
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     if request.args.get('state') != login_session['state']:
@@ -84,7 +80,8 @@ def gconnect():
     stored_access_token = login_session.get('access_token')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'), 200)
+        response = make_response(json.dumps(
+            'Current user is already connected.'), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -103,70 +100,104 @@ def gconnect():
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
-    output = ''
-    output += '<h1>Welcome, '
-    output += login_session['username']
-    output += '!</h1>'
-    output += '<img src="'
-    output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as %s" % login_session['username'])
-    print("done!")
-    return output
-    
+    return redirect(url_for('catalogItemAll'))
+
+
+# proper google sign-out method
+@app.route("/gdisconnect")
+def gdisconnect():
+    access_token = login_session.get('access_token')
+    if access_token is None:
+        print('Access Token is None')
+        response = make_response(json.dumps(
+            'Current user not connected.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    print('In gdisconnect access token is %s', access_token)
+    print('User name is: ')
+    print(login_session['username'])
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[0]
+    print ('result is ')
+    print (result)
+    if result['status'] == '200':
+        del login_session['access_token']
+        del login_session['gplus_id']
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+        return redirect(url_for('catalogItemAll'))
+    else:
+        return redirect(url_for('catalogItemAll'))
 
 
 @app.route('/')
 def catalogItemAll():
-    #TODO: Read All Category Items - plus after login processs
+    # Read All Category Items - plus after login processs
     categories = session.query(Category).all()
-    latestItems = session.query(CategoryItem).order_by(desc(CategoryItem.time_updated))
+    latestItems = session.query(CategoryItem).order_by(
+        desc(CategoryItem.time_updated))
     latestCategories = []
     for i in latestItems:
-        latestCategories.append(session.query(Category).filter_by(id=i.category_id).first())
+        latestCategories.append(session.query(
+            Category).filter_by(id=i.category_id).first())
+    # When accessing public page
     if 'username' not in login_session:
         state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                for x in range(32))
+                        for x in range(32))
         login_session['state'] = state
         return render_template('publicCatalogItemAll.html', categories=categories, latest=zip(latestCategories, latestItems), STATE=state)
+    # When accessing admin page
     else:
         return render_template('catalogItemAll.html', categories=categories, latest=zip(latestCategories, latestItems))
 
 
 @app.route('/catalog/<string:category_name>/items')
 def catalogItemLists(category_name):
-    #TODO: Read category item lists
+    # Read category item lists
     categories = session.query(Category).all()
-    associatedCategory = session.query(Category).filter_by(name=category_name).first()
-    associatedItems = session.query(CategoryItem).filter_by(category_id=associatedCategory.id).all()
+    associatedCategory = session.query(
+        Category).filter_by(name=category_name).first()
+    associatedItems = session.query(CategoryItem).filter_by(
+        category_id=associatedCategory.id).all()
+    # When accessing public page
     if 'username' not in login_session:
         state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                for x in range(32))
+                        for x in range(32))
         login_session['state'] = state
         return render_template('publicCatalogItemLists.html', categories=categories, associatedCategory=associatedCategory, associatedItems=associatedItems, STATE=state)
-    else:    
+    # When accessing admin page
+    else:
         return render_template('catalogItemLists.html', categories=categories, associatedCategory=associatedCategory, associatedItems=associatedItems)
 
 
 @app.route('/catalog/<string:category_name>/<string:item_name>', methods=['GET', 'POST'])
 def catalogItemDesc(category_name, item_name):
-    #TODO: Read a category item description - plus after login process
+    # Read a category item description
+    categories = session.query(Category).all()
+    associatedCategory = session.query(
+        Category).filter_by(name=category_name).first()
     item = session.query(CategoryItem).filter_by(name=item_name).one()
+    # When accessing public page
     if 'username' not in login_session:
         state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                for x in range(32))
+                        for x in range(32))
         login_session['state'] = state
-        return render_template('publicCatalogItemDesc.html', item=item, STATE=state)       
+        return render_template('publicCatalogItemDesc.html', associatedCategory=associatedCategory, item=item, STATE=state)
+    # When accessing admin page
     else:
         return render_template('catalogItemDesc.html', item=item)
 
 
 @app.route('/catalog/add', methods=['GET', 'POST'])
 def catalogItemAdd():
-    #TODO: Edit a category item - Only after login
+    # Edit a category item - Only after login
     if request.method == 'POST':
-        category = session.query(Category).filter_by(name=request.form.get('category_selected')).first()
-        newItem = CategoryItem(name=request.form['name'], description=request.form['description'], category_id=category.id)
+        category = session.query(Category).filter_by(
+            name=request.form.get('category_selected')).first()
+        newItem = CategoryItem(
+            name=request.form['name'], description=request.form['description'], category_id=category.id)
         session.add(newItem)
         session.commit()
         return redirect(url_for('catalogItemAll'))
@@ -177,19 +208,20 @@ def catalogItemAdd():
 
 @app.route('/catalog/<string:item_name>/edit', methods=['GET', 'POST'])
 def catalogItemEdit(item_name):
-    #TODO: Edit a category item - Only after login
+    # Edit a category item - Only after login
     editItem = session.query(CategoryItem).filter_by(name=item_name).first()
     print(item_name)
     print(editItem)
     if request.method == 'POST':
         editItem.name = request.form['name']
         editItem.description = request.form['description']
-        editItemCategory = session.query(Category).filter_by(name=request.form.get('category_selected')).first()
+        editItemCategory = session.query(Category).filter_by(
+            name=request.form.get('category_selected')).first()
         editItem.category_id = editItemCategory.id
         session.add(editItem)
         session.commit()
         return redirect(url_for('catalogItemAll'))
-    else: 
+    else:
         category = session.query(Category).all()
         item = session.query(CategoryItem).filter_by(name=item_name).first()
         return render_template('catalogItemEdit.html', category=category, item=item)
@@ -197,7 +229,7 @@ def catalogItemEdit(item_name):
 
 @app.route('/catalog/<string:item_name>/delete',  methods=['GET', 'POST'])
 def catalogItemDelete(item_name):
-    #TODO: Delete a category item - Only after login
+    # Delete a category item - Only after login
     deleteItem = session.query(CategoryItem).filter_by(name=item_name).first()
     if request.method == 'POST':
         session.delete(deleteItem)
@@ -210,7 +242,7 @@ def catalogItemDelete(item_name):
 
 @app.route('/catalog.json')
 def catalogJSON():
-    #TODO: Return category JSON
+    # Return category JSON
     categories = session.query(Category).all()
     items = session.query(CategoryItem).all()
     category = [i.serialize for i in categories]
@@ -221,9 +253,9 @@ def catalogJSON():
             if j.category_id == var.id:
                 itemArray.append(j.serialize)
         category[idx]['item'] = itemArray
-    
+
     return jsonify(Category=category)
-    
+
 
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'

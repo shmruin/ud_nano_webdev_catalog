@@ -1,0 +1,11 @@
+body {
+  padding-bottom: 20px;
+}
+
+.navbar {
+  margin-bottom: 20px;
+}
+
+.navbar-nav {
+  min-height: 51px;
+}
