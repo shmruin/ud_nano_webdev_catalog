@@ -1,4 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import (Flask,
+                   render_template,
+                   request,
+                   redirect,
+                   url_for,
+                   jsonify)
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Category, CategoryItem
@@ -116,7 +121,8 @@ def gdisconnect():
     print('In gdisconnect access token is %s', access_token)
     print('User name is: ')
     print(login_session['username'])
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' \
+          % login_session['access_token']
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
     print ('result is ')
@@ -147,10 +153,15 @@ def catalogItemAll():
         state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                         for x in range(32))
         login_session['state'] = state
-        return render_template('publicCatalogItemAll.html', categories=categories, latest=zip(latestCategories, latestItems), STATE=state)
+        return render_template('publicCatalogItemAll.html',
+                               categories=categories,
+                               atest=zip(latestCategories, latestItems),
+                               STATE=state)
     # When accessing admin page
     else:
-        return render_template('catalogItemAll.html', categories=categories, latest=zip(latestCategories, latestItems))
+        return render_template('catalogItemAll.html',
+                               categories=categories,
+                               latest=zip(latestCategories, latestItems))
 
 
 @app.route('/catalog/<string:category_name>/items')
@@ -166,13 +177,21 @@ def catalogItemLists(category_name):
         state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                         for x in range(32))
         login_session['state'] = state
-        return render_template('publicCatalogItemLists.html', categories=categories, associatedCategory=associatedCategory, associatedItems=associatedItems, STATE=state)
+        return render_template('publicCatalogItemLists.html',
+                               categories=categories,
+                               associatedCategory=associatedCategory,
+                               associatedItems=associatedItems,
+                               STATE=state)
     # When accessing admin page
     else:
-        return render_template('catalogItemLists.html', categories=categories, associatedCategory=associatedCategory, associatedItems=associatedItems)
+        return render_template('catalogItemLists.html',
+                               categories=categories,
+                               associatedCategory=associatedCategory,
+                               associatedItems=associatedItems)
 
 
-@app.route('/catalog/<string:category_name>/<string:item_name>', methods=['GET', 'POST'])
+@app.route('/catalog/<string:category_name>/<string:item_name>',
+           methods=['GET', 'POST'])
 def catalogItemDesc(category_name, item_name):
     # Read a category item description
     categories = session.query(Category).all()
@@ -184,7 +203,10 @@ def catalogItemDesc(category_name, item_name):
         state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                         for x in range(32))
         login_session['state'] = state
-        return render_template('publicCatalogItemDesc.html', associatedCategory=associatedCategory, item=item, STATE=state)
+        return render_template('publicCatalogItemDesc.html',
+                               associatedCategory=associatedCategory,
+                               item=item,
+                               STATE=state)
     # When accessing admin page
     else:
         return render_template('catalogItemDesc.html', item=item)
@@ -193,11 +215,14 @@ def catalogItemDesc(category_name, item_name):
 @app.route('/catalog/add', methods=['GET', 'POST'])
 def catalogItemAdd():
     # Edit a category item - Only after login
+    if 'username' not in login_session:
+        return redirect(url_for('catalogItemAll'))
     if request.method == 'POST':
         category = session.query(Category).filter_by(
             name=request.form.get('category_selected')).first()
-        newItem = CategoryItem(
-            name=request.form['name'], description=request.form['description'], category_id=category.id)
+        newItem = CategoryItem(name=request.form['name'],
+                               description=request.form['description'],
+                               category_id=category.id)
         session.add(newItem)
         session.commit()
         return redirect(url_for('catalogItemAll'))
@@ -209,6 +234,8 @@ def catalogItemAdd():
 @app.route('/catalog/<string:item_name>/edit', methods=['GET', 'POST'])
 def catalogItemEdit(item_name):
     # Edit a category item - Only after login
+    if 'username' not in login_session:
+        return redirect(url_for('catalogItemAll'))
     editItem = session.query(CategoryItem).filter_by(name=item_name).first()
     print(item_name)
     print(editItem)
@@ -224,12 +251,16 @@ def catalogItemEdit(item_name):
     else:
         category = session.query(Category).all()
         item = session.query(CategoryItem).filter_by(name=item_name).first()
-        return render_template('catalogItemEdit.html', category=category, item=item)
+        return render_template('catalogItemEdit.html',
+                               category=category,
+                               item=item)
 
 
 @app.route('/catalog/<string:item_name>/delete',  methods=['GET', 'POST'])
 def catalogItemDelete(item_name):
     # Delete a category item - Only after login
+    if 'username' not in login_session:
+        return redirect(url_for('catalogItemAll'))
     deleteItem = session.query(CategoryItem).filter_by(name=item_name).first()
     if request.method == 'POST':
         session.delete(deleteItem)
