@@ -31,6 +31,7 @@ class CategoryItem(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(80), nullable=False)
     description = Column(String(250))
+    username = Column(String(250))
     time_created = Column(DateTime(timezone=True), server_default=func.now())
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
     category_id = Column(Integer, ForeignKey('category.id'))
@@ -43,6 +44,7 @@ class CategoryItem(Base):
             'id': self.id,
             'name': self.name,
             'description': self.description,
+            'username': self.user_id,
             'created_time': self.time_created,
             'updated_time': self.time_updated,
             'cat_id': self.category_id

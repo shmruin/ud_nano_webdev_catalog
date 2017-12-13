@@ -155,7 +155,7 @@ def catalogItemAll():
         login_session['state'] = state
         return render_template('publicCatalogItemAll.html',
                                categories=categories,
-                               atest=zip(latestCategories, latestItems),
+                               latest=zip(latestCategories, latestItems),
                                STATE=state)
     # When accessing admin page
     else:
@@ -222,7 +222,8 @@ def catalogItemAdd():
             name=request.form.get('category_selected')).first()
         newItem = CategoryItem(name=request.form['name'],
                                description=request.form['description'],
-                               category_id=category.id)
+                               category_id=category.id,
+                               username=login_session['username'])
         session.add(newItem)
         session.commit()
         return redirect(url_for('catalogItemAll'))
@@ -237,6 +238,13 @@ def catalogItemEdit(item_name):
     if 'username' not in login_session:
         return redirect(url_for('catalogItemAll'))
     editItem = session.query(CategoryItem).filter_by(name=item_name).first()
+    if editItem.username != login_session['username']:
+        return "<script>function myFunction() \
+                {alert('You are not authorized to edit this item. \
+                Please create your own item in order to edit. \
+                Now redirect to add your own item...'); \
+                window.location.href='/catalog/add'} \
+                </script><body onload='myFunction()''>"
     print(item_name)
     print(editItem)
     if request.method == 'POST':
@@ -262,6 +270,13 @@ def catalogItemDelete(item_name):
     if 'username' not in login_session:
         return redirect(url_for('catalogItemAll'))
     deleteItem = session.query(CategoryItem).filter_by(name=item_name).first()
+    if deleteItem.username != login_session['username']:
+        return "<script>function myFunction() \
+                {alert('You are not authorized to delete this item. \
+                Please create your own item in order to delete. \
+                Now redirect to main page...'); \
+                window.location.href='/'} \
+                </script><body onload='myFunction()''>"
     if request.method == 'POST':
         session.delete(deleteItem)
         session.commit()
